@@ -1,0 +1,184 @@
+/* Quire — OneNote-style navigator */
+
+.quire {
+  padding: 0;
+  --quire-indent: 15px;
+}
+
+.quire-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px 6px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  position: sticky;
+  top: 0;
+  background: var(--background-secondary);
+  z-index: 2;
+}
+.quire-tool {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.quire-tool:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+
+.quire-list { padding: 4px 4px 24px; }
+
+.quire-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;            /* comfortable touch target on iPad */
+  padding-right: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.quire-row:hover { background: var(--background-modifier-hover); }
+.quire-row.is-active { background: var(--background-modifier-active-hover); font-weight: 600; }
+
+/* Top-level folders read as filled badges — the strongest break in the tree,
+   so you can see where one notebook ends and the next begins while scrolling. */
+.quire-row.is-badge {
+  font-weight: 600;
+  color: #fff;
+  margin: 6px 4px 2px 0;
+  min-height: 28px;
+  border-radius: 5px;
+  padding-left: 6px !important;
+  letter-spacing: 0.01em;
+}
+.quire-row.is-badge:hover { filter: brightness(1.08); background-image: none; }
+.quire-row.is-badge .quire-chev { color: rgba(255, 255, 255, 0.75); }
+.quire-row.is-badge .quire-chev:hover { color: #fff; }
+.quire-row.is-badge .quire-name { color: #fff; }
+.quire-row.is-badge.is-active { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55); }
+
+.quire-row.is-top { font-weight: 600; }
+.quire-row.quire-note .quire-name { color: var(--text-muted); }
+.quire-row.is-utility .quire-name { color: var(--text-faint); font-style: italic; }
+
+.quire-chev {
+  width: 14px; height: 14px;
+  flex: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint);
+}
+.quire-chev .svg-icon { width: 12px; height: 12px; }
+.quire-chev:hover { color: var(--text-normal); }
+
+.quire-mark { flex: none; display: flex; align-items: center; justify-content: center; }
+.quire-mark.is-square { width: 10px; height: 10px; border-radius: 2.5px; }
+.quire-mark.is-icon .svg-icon { width: 14px; height: 14px; }
+
+.quire-tick {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  width: 2px;
+  border-radius: 2px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.quire-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* drag feedback */
+.quire-row.is-dragging { opacity: 0.4; }
+.quire-row.drop-above { box-shadow: inset 0 2px 0 0 var(--interactive-accent); }
+.quire-row.drop-below { box-shadow: inset 0 -2px 0 0 var(--interactive-accent); }
+.quire-row.drop-into  { background: var(--background-modifier-active-hover);
+                        box-shadow: inset 0 0 0 1px var(--interactive-accent); }
+
+@media (pointer: coarse) {
+  .quire-row { min-height: 34px; }
+  .quire-chev { width: 20px; height: 20px; }
+}
+
+/* ---- icon picker ---- */
+.quire-icon-modal h3 { margin: 0 0 12px; }
+.quire-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.quire-icon-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-normal);
+  padding: 0;
+}
+.quire-icon-cell:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+.quire-icon-cell .svg-icon { width: 18px; height: 18px; }
+.quire-icon-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+@media (max-width: 480px) {
+  .quire-icon-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* ------------------------------------------------------------------------
+   Hiding Quire's own bookkeeping.
+
+   These three keys are load-bearing but never worth reading, so they are
+   removed from the Properties panel entirely, and the whole panel collapses
+   when a note has nothing else in it. In source mode -- the one place an
+   accidental delete actually happens -- the frontmatter shrinks to a hairline
+   rather than disappearing, so it stays visible enough to avoid, and the
+   DO-NOT-EDIT prefix inside the value says so out loud.
+   ------------------------------------------------------------------------ */
+
+.metadata-property[data-property-key="quire_src"],
+.metadata-property[data-property-key="nav_order"],
+.metadata-property[data-property-key="nav_parent"] {
+  display: none !important;
+}
+
+/* Collapse the Properties block when Quire's keys are all that is in it. */
+.metadata-container:not(
+  :has(.metadata-property:not([data-property-key="quire_src"])
+                         :not([data-property-key="nav_order"])
+                         :not([data-property-key="nav_parent"]))
+) {
+  display: none !important;
+}
+
+/* Source mode: present but tiny, dim, and unmistakably not prose. */
+.markdown-source-view.mod-cm6 .cm-line:has(.cm-hmd-frontmatter),
+.markdown-source-view.mod-cm6 .HyperMD-frontmatter,
+.markdown-source-view.mod-cm6 .cm-hmd-frontmatter {
+  font-size: 8px !important;
+  line-height: 1.25 !important;
+  opacity: 0.28;
+  font-family: var(--font-monospace);
+  letter-spacing: 0;
+}
+.markdown-source-view.mod-cm6 .HyperMD-frontmatter:hover,
+.markdown-source-view.mod-cm6 .cm-line:has(.cm-hmd-frontmatter):hover {
+  opacity: 0.75;
+}
+/* The --- fences shrink too, so the block reads as one hairline strip. */
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock-bg:has(.cm-hmd-frontmatter) {
+  padding: 0;
+}

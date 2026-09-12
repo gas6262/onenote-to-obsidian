@@ -1,0 +1,62 @@
+/* ==========================================================================
+   Wide pages — a thin, fixed gutter instead of Obsidian's wide dead margins.
+
+   By default Obsidian clamps note content to --file-line-width (700px) and
+   centres it, so widening the window just grows the empty space either side.
+   This keeps the content left-aligned against a slim constant gutter and lets
+   text use the width you actually gave it.
+
+   Two dials, both here at the top:
+   ========================================================================== */
+
+body {
+  /* Thickness of the gutter on each side. 24-40px reads well; 12px is tight. */
+  --wide-gutter: 28px;
+
+  /* Upper bound on line length so text never runs absurdly wide on a big
+     display. Set to 100% if you genuinely want edge-to-edge. */
+  --wide-max: 1500px;
+}
+
+/* Override the built-in clamp. This applies whether or not "Readable line
+   length" is on, so the setting stops mattering either way. */
+.markdown-source-view.mod-cm6 .cm-contentContainer,
+.markdown-source-view.mod-cm6 .cm-content,
+.markdown-preview-view .markdown-preview-sizer,
+.markdown-source-view.is-readable-line-width .cm-sizer,
+.markdown-preview-view.is-readable-line-width .markdown-preview-sizer {
+  max-width: var(--wide-max) !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Replace the theme's generous padding with the thin gutter. */
+.markdown-source-view.mod-cm6 .cm-scroller,
+.markdown-preview-view {
+  padding-left: var(--wide-gutter) !important;
+  padding-right: var(--wide-gutter) !important;
+}
+
+/* Obsidian exposes these too; keeping them in step avoids half-applied width
+   when a theme or plugin reads the variables directly. */
+.workspace-leaf.mod-active .view-content {
+  --file-line-width: var(--wide-max);
+  --file-margins: var(--wide-gutter);
+}
+
+/* Properties and the inline title share the sizer, so pin them to match —
+   otherwise the title floats centred over left-aligned body text. */
+.markdown-source-view.mod-cm6 .inline-title,
+.markdown-source-view.mod-cm6 .metadata-container,
+.markdown-preview-view .inline-title,
+.markdown-preview-view .metadata-container {
+  max-width: var(--wide-max) !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Phones have no room to spare; give them a hairline gutter. */
+body.is-phone {
+  --wide-gutter: 10px;
+}

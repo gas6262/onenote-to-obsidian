@@ -1,0 +1,9 @@
+{
+  "id": "quire",
+  "name": "Quire",
+  "version": "0.1.0",
+  "minAppVersion": "1.7.2",
+  "description": "A OneNote-style navigator: coloured folders with icons, notes that nest to any depth, and manual drag ordering that survives sync.",
+  "author": "David Gaspard",
+  "isDesktopOnly": false
+}
