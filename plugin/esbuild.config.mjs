@@ -4,7 +4,11 @@ import builtins from "builtin-modules";
 import { copyFileSync, mkdirSync, existsSync } from "fs";
 
 const prod = process.argv[2] === "production";
-const VAULT_PLUGIN_DIR = "/Users/davidgaspard/source/notes/.obsidian/plugins/quire";
+// Point this at a vault to build straight into it:
+//   QUIRE_VAULT=/path/to/vault npm run build
+const VAULT_PLUGIN_DIR = process.env.QUIRE_VAULT
+  ? `${process.env.QUIRE_VAULT}/.obsidian/plugins/quire`
+  : "dist";
 
 const copyStatic = {
   name: "copy-static",

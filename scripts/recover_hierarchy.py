@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import re
 import sys
 import time
@@ -27,7 +28,7 @@ import msal
 import requests
 
 GRAPH = "https://graph.microsoft.com/v1.0"
-CLIENT_ID = "e3afdb41-c463-4f29-9114-8d1b8dacb230"
+CLIENT_ID = os.environ.get("ONENOTE_CLIENT_ID", "")
 AUTHORITY = "https://login.microsoftonline.com/consumers"
 SCOPES = ["Notes.Read"]
 
@@ -37,6 +38,11 @@ FM_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
 
 # --------------------------------------------------------------------- auth
 def token(cache_path: Path) -> str:
+    if not CLIENT_ID:
+        raise SystemExit(
+            "Set ONENOTE_CLIENT_ID to your Azure app registration id "
+            "(see SKILL.md for the three-minute walkthrough)."
+        )
     cache = msal.SerializableTokenCache()
     if cache_path.exists():
         cache.deserialize(cache_path.read_text())
