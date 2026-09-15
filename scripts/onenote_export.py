@@ -358,7 +358,7 @@ def reverse_page_groups(pages: list[dict]) -> list[dict]:
     return walk(pages, 0)
 
 
-def frontmatter(page: dict, trail: list[str], nav_order: int,
+def frontmatter(page: dict, _trail: list[str], nav_order: int,
                 nav_parent: str | None) -> str:
     """Two working keys, plus one packed line of provenance.
 
@@ -384,7 +384,6 @@ def frontmatter(page: dict, trail: list[str], nav_order: int,
     if nav_parent:
         lines.append(f"nav_parent: {esc(f'[[{nav_parent}]]')}")
     lines.append(f"quire_src: {esc(packed)}")
-    lines.append(f"quire_section: {esc(' / '.join(trail))}")
     lines.append("---\n")
     return "\n".join(lines)
 

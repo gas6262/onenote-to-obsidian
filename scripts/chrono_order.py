@@ -17,6 +17,9 @@ Rules, deliberately conservative:
   * Undated notes keep their existing relative order and sit ABOVE the dated
     stream, because things like "Goals" and "Weekly Checklist" are reference
     pages, not entries. Pass --undated-last to flip that.
+  * A group is only re-sorted when dates actually govern it -- it hangs under a
+    year parent, or at least half its members are dated. Everything else keeps
+    the order OneNote gave it, which is often deliberate. --all-groups overrides.
 
 Also re-parents a dated note sitting loose at the top of a folder when a year
 parent matching its year exists alongside it.
@@ -100,6 +103,20 @@ class Note:
         return bool(self.date and self.date[1] is None)
 
 
+def date_dominated(members: list["Note"], parent_year: int | None) -> bool:
+    """Should this group be re-sorted by date at all?
+
+    OneNote's own order is meaningful in plenty of sections -- an interview
+    pipeline, a list of companies -- and blindly date-sorting the whole vault
+    destroys it. So a group is only touched when dates clearly govern it:
+    it hangs under a year parent, or at least half its members are dated.
+    """
+    if parent_year is not None:
+        return True
+    dated = sum(1 for n in members if n.date)
+    return dated >= 2 and dated * 2 >= len(members)
+
+
 def sort_group(notes: list[Note], parent_year: int | None, undated_last: bool) -> list[Note]:
     """Newest first. Undated notes hold their relative order, as a block."""
     dated = [n for n in notes if n.date]
@@ -116,7 +133,8 @@ def sort_group(notes: list[Note], parent_year: int | None, undated_last: bool) -
     return dated + undated if undated_last else undated + dated
 
 
-def process_folder(folder: Path, undated_last: bool, plan: list[tuple[Path, dict[str, str]]]) -> list[str]:
+def process_folder(folder: Path, undated_last: bool, all_groups: bool,
+                   plan: list[tuple[Path, dict[str, str]]]) -> list[str]:
     notes = [Note(p) for p in folder.glob("*.md")]
     if not notes:
         return []
@@ -141,6 +159,8 @@ def process_folder(folder: Path, undated_last: bool, plan: list[tuple[Path, dict
     for parent_name, members in groups.items():
         parent = by_name.get(parent_name) if parent_name else None
         parent_year = parent.date[0] if parent and parent.is_year else None
+        if not all_groups and not date_dominated(members, parent_year):
+            continue  # leave OneNote's ordering alone
         ordered = sort_group(members, parent_year, undated_last)
         for i, n in enumerate(ordered, start=1):
             rank = i * RANK_STEP
@@ -159,6 +179,8 @@ def main() -> int:
     ap.add_argument("--path", action="append", help="limit to a folder; repeatable")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--undated-last", action="store_true")
+    ap.add_argument("--all-groups", action="store_true",
+                    help="re-sort every group, even ones OneNote ordered deliberately")
     args = ap.parse_args()
 
     vault = Path(args.vault)
@@ -172,7 +194,7 @@ def main() -> int:
 
     plan: list[tuple[Path, dict[str, str]]] = []
     for folder in sorted(folders):
-        log = process_folder(folder, args.undated_last, plan)
+        log = process_folder(folder, args.undated_last, args.all_groups, plan)
         if log:
             print(f"=== {folder.relative_to(vault)}")
             for line in log:

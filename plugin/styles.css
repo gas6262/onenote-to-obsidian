@@ -149,17 +149,15 @@
    DO-NOT-EDIT prefix inside the value says so out loud.
    ------------------------------------------------------------------------ */
 
-.metadata-property[data-property-key="quire_src"],
-.metadata-property[data-property-key="nav_order"],
-.metadata-property[data-property-key="nav_parent"] {
+.metadata-property[data-property-key^="quire_"],
+.metadata-property[data-property-key^="nav_"] {
   display: none !important;
 }
 
 /* Collapse the Properties block when Quire's keys are all that is in it. */
 .metadata-container:not(
-  :has(.metadata-property:not([data-property-key="quire_src"])
-                         :not([data-property-key="nav_order"])
-                         :not([data-property-key="nav_parent"]))
+  :has(.metadata-property:not([data-property-key^="quire_"])
+                         :not([data-property-key^="nav_"]))
 ) {
   display: none !important;
 }

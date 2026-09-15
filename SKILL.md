@@ -142,14 +142,99 @@ way; these edit hundreds of files at once. Back up before `--apply`:
 rsync -a --include='*/' --include='*.md' --exclude='*' vault/ /tmp/backup/
 ```
 
+## Plugins
+
+**Quire is the only one this skill requires, and it ships in `plugin/`.** It is
+not in the community store, so it is installed by copying three files into
+`<vault>/.obsidian/plugins/quire/` — `make_vault.py` does that automatically.
+
+| Plugin | Needed? | Why |
+|---|---|---|
+| **Quire** (bundled) | **Required** | The navigator itself: coloured folders, notes nesting to any depth, drag ordering, the CSS that hides the frontmatter |
+| **Excalidraw** | Optional | Quire detects it and adds *New drawing here*, which creates the drawing in your current folder instead of Excalidraw's configured one. Absent, the button and command simply do not appear. |
+| Omnisearch | Optional | Full-text search. Worth having — OneNote users expect search to find body text. |
+| Recent Files | Optional | A recents list in the sidebar |
+| Editing Toolbar | Optional | Formatting toolbar, closer to OneNote's ribbon |
+| Minimal Theme Settings | Optional | Only useful with the Minimal theme installed |
+
+Everything above is `isDesktopOnly: false`, so it all works on iPhone and iPad.
+
+### Copying a setup between vaults
+
+To make a second vault match one you have already tuned:
+
+```bash
+python3 scripts/clone_vault_config.py ~/source/notes ~/Documents/notes/work --apply
+```
+
+It copies plugin code and portable settings, and deliberately does **not** copy
+three things that would drag personal state across: Recent Files' remembered
+paths, Terminal's absolute paths to launcher scripts inside the source vault
+(those are rewritten, and referenced `.tools/*.sh` carried over), and Quire's own
+settings, which key collapsed folders and colours to folders the target vault
+does not have. Workspace layout, bookmarks and graph state are skipped for the
+same reason. Run it without `--apply` first to see the plan.
+
+### After any install
+
+Restricted Mode is **per vault**. A newly created vault ignores plugin files
+entirely until Settings → Community plugins → *Turn on community plugins*. Files
+present but plugins missing from the UI is almost always this.
+
 ## Data model
 
-Two working keys per note, plus one packed line:
+**Exactly three keys per note, and all three are invisible in the editor.**
 
 ```yaml
-nav_order: 2000            # sparse rank; one drag rewrites one file
+---
+quire_src: "DO-NOT-EDIT|eyJ0IjoiOC8yNS8yNiIsInMiOiJodHRwczovL29uZWRy…"
 nav_parent: "[[2026]]"     # wikilink on purpose — see below
-quire_src: "DO-NOT-EDIT|eyJ0Ijoi…"
+nav_order: 1000            # sparse rank; one drag rewrites one file
+---
+```
+
+That is a real note from a migrated vault, not an illustration. Writing a
+**fourth** key is what makes Obsidian render its Properties table, which is the
+one thing that makes this look heavy — so do not add one without also adding it
+to the CSS below.
+
+### Why you do not see any of it
+
+`plugin/styles.css` hides these from the Properties panel entirely, and collapses
+the panel when a note has nothing else in it:
+
+```css
+.metadata-property[data-property-key^="quire_"],
+.metadata-property[data-property-key^="nav_"]     { display: none !important; }
+```
+
+Matching by **prefix** is deliberate: an earlier version listed the three keys
+explicitly, the exporter later gained a `quire_section` key, and that one key --
+unlisted, therefore unhidden -- brought the whole Properties table back on a
+freshly migrated vault. Prefix matching means a new `nav_*` or `quire_*` key is
+covered the moment it exists.
+
+In source mode the frontmatter is not hidden but shrunk -- 8px at 28% opacity,
+brightening on hover -- so it stays visible enough to avoid deleting by accident.
+The `DO-NOT-EDIT|` prefix inside the value says so out loud.
+
+### What is inside quire_src
+
+Base64 of a compact JSON object, three fields, all worth keeping and none worth
+reading:
+
+```json
+{"t": "8/25/26", "s": "https://onedrive.live.com/…", "i": "0-ae678ac2…"}
+```
+
+`t` is the original OneNote title, which matters because filenames were mangled
+at import -- a page called `9/3/26` becomes `9-3-26.md`, and one called
+`Things That Seem to Make Me Smarter/More productive` loses its slash entirely.
+`i` is the page id, the key that makes a re-sync exact rather than fuzzy. `s` is
+the link back to the live page. Decode one with:
+
+```bash
+python3 scripts/compact_frontmatter.py --decode path/to/note.md
 ```
 
 Three decisions worth not undoing:
@@ -169,6 +254,14 @@ rename constantly.
 **Sparse ranks in steps of 1000.** Inserting between two notes writes the
 midpoint — one file, not the whole folder. Compaction only happens when a gap
 runs out.
+
+**Ordering comes from OneNote, and is only overridden where dates clearly rule.**
+The exporter writes `nav_order` straight from OneNote's own `order` field, so a
+section you arranged by hand arrives arranged. `chrono_order.py` then re-sorts
+*only* groups that dates plainly govern — a group hanging under a year parent, or
+one where at least half the members are dated. An interview pipeline or a list of
+companies keeps the order OneNote gave it. `--all-groups` forces the old
+everything-everywhere behaviour, and is almost never what you want.
 
 **Folders** are real directories at any depth. Folder order lives in the folder
 note's frontmatter, created lazily on first drag, so unordered folders never

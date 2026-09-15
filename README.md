@@ -32,3 +32,28 @@ why the migration breaks, the data model, the sync traps.
 - `snippets/` — a CSS snippet that replaces Obsidian's wide dead margins
 
 Requires Python 3.10+ and, for rebuilding the plugin, Node 18+.
+
+## What lands in a note
+
+Three frontmatter keys, all hidden in the editor by the plugin's CSS:
+
+```yaml
+quire_src: "DO-NOT-EDIT|eyJ0IjoiOC8yNS8yNiIs…"   # packed OneNote provenance
+nav_parent: "[[2026]]"                           # nesting, rename-safe
+nav_order: 1000                                  # sparse rank
+```
+
+## Plugins
+
+Quire is bundled and required; `make_vault.py` installs it. Excalidraw is
+optional — if present, Quire adds a *New drawing here* command that creates the
+drawing in your current folder. Everything works on iPhone and iPad.
+
+To copy a tuned setup onto another vault:
+
+```bash
+python3 scripts/clone_vault_config.py <source-vault> <target-vault> --apply
+```
+
+Restricted Mode is per vault: a new vault ignores plugin files until
+Settings → Community plugins → *Turn on community plugins*.
